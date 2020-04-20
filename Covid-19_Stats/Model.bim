@@ -1,0 +1,643 @@
+{
+  "name": "SemanticModel",
+  "compatibilityLevel": 1500,
+  "model": {
+    "culture": "da-DK",
+    "dataSources": [
+      {
+        "type": "structured",
+        "name": "SQL/hildur ucn dk;Covid-19_Stats",
+        "connectionDetails": {
+          "protocol": "tds",
+          "address": {
+            "server": "hildur.ucn.dk",
+            "database": "Covid-19_Stats"
+          },
+          "authentication": null,
+          "query": null
+        },
+        "credential": {
+          "AuthenticationKind": "UsernamePassword",
+          "kind": "SQL",
+          "path": "hildur.ucn.dk;Covid-19_Stats",
+          "Username": "psu_Covid19_Reader",
+          "EncryptConnection": false
+        }
+      }
+    ],
+    "tables": [
+      {
+        "name": "DimDate",
+        "dataCategory": "Time",
+        "columns": [
+          {
+            "name": "date",
+            "dataType": "dateTime",
+            "isKey": true,
+            "sourceColumn": "date"
+          },
+          {
+            "name": "Year",
+            "dataType": "int64",
+            "sourceColumn": "Year"
+          },
+          {
+            "name": "Month",
+            "dataType": "int64",
+            "sourceColumn": "Month"
+          },
+          {
+            "name": "Day",
+            "dataType": "int64",
+            "sourceColumn": "Day"
+          },
+          {
+            "type": "calculated",
+            "name": "MonthWithName",
+            "dataType": "string",
+            "isDataTypeInferred": true,
+            "expression": [
+              "RIGHT(\" \" & FORMAT([Month],\"#0\"), 2) & \" - \" & FORMAT(DimDate[date] , \"MMM\")",
+              "",
+              ""
+            ]
+          },
+          {
+            "type": "calculated",
+            "name": "DayWithName",
+            "dataType": "string",
+            "isDataTypeInferred": true,
+            "expression": [
+              "FORMAT(DimDate[date] , \"MMM\") & \" - \" & FORMAT(DimDate[date] , \"dd\")",
+              ""
+            ]
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"SQL/hildur ucn dk;Covid-19_Stats\",",
+                "    dbo_DimDate = Source{[Schema=\"dbo\",Item=\"DimDate\"]}[Data]",
+                "in",
+                "    dbo_DimDate"
+              ]
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Calendar1",
+            "levels": [
+              {
+                "name": "MonthWithName",
+                "ordinal": 0,
+                "column": "MonthWithName"
+              },
+              {
+                "name": "DayWithName",
+                "ordinal": 1,
+                "column": "DayWithName"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "DimLocation",
+        "columns": [
+          {
+            "name": "Alpha_2_code",
+            "dataType": "string",
+            "sourceColumn": "Alpha_2_code"
+          },
+          {
+            "name": "ParentCode",
+            "dataType": "string",
+            "sourceColumn": "ParentCode"
+          },
+          {
+            "name": "Location",
+            "dataType": "string",
+            "sourceColumn": "Location"
+          },
+          {
+            "name": "Alpha_3_code",
+            "dataType": "string",
+            "sourceColumn": "Alpha_3_code"
+          },
+          {
+            "name": "Numeric_code",
+            "dataType": "int64",
+            "sourceColumn": "Numeric_code"
+          },
+          {
+            "name": "Latitude_average",
+            "dataType": "double",
+            "sourceColumn": "Latitude_average"
+          },
+          {
+            "name": "Longitude_average",
+            "dataType": "double",
+            "sourceColumn": "Longitude_average"
+          },
+          {
+            "name": "IsCovidCountry",
+            "dataType": "int64",
+            "sourceColumn": "IsCovidCountry"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"SQL/hildur ucn dk;Covid-19_Stats\",",
+                "    dbo_DimLocation = Source{[Schema=\"dbo\",Item=\"DimLocation\"]}[Data]",
+                "in",
+                "    dbo_DimLocation"
+              ]
+            }
+          }
+        ],
+        "hierarchies": [
+          {
+            "name": "Loc1",
+            "levels": [
+              {
+                "name": "ParentCode",
+                "ordinal": 0,
+                "column": "ParentCode"
+              },
+              {
+                "name": "Alpha_2_code",
+                "ordinal": 1,
+                "column": "Alpha_2_code"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "FactCovid19Stat",
+        "columns": [
+          {
+            "name": "Alpha_2_code",
+            "dataType": "string",
+            "sourceColumn": "Alpha_2_code"
+          },
+          {
+            "name": "date",
+            "dataType": "dateTime",
+            "sourceColumn": "date"
+          },
+          {
+            "name": "confirmed",
+            "dataType": "int64",
+            "sourceColumn": "confirmed"
+          },
+          {
+            "name": "deaths",
+            "dataType": "int64",
+            "sourceColumn": "deaths"
+          },
+          {
+            "name": "recovered",
+            "dataType": "int64",
+            "sourceColumn": "recovered"
+          },
+          {
+            "type": "calculated",
+            "name": "ActiveCases",
+            "dataType": "int64",
+            "isDataTypeInferred": true,
+            "expression": "[confirmed] - [deaths] - [recovered]"
+          },
+          {
+            "type": "calculated",
+            "name": "Net",
+            "dataType": "int64",
+            "isDataTypeInferred": true
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"SQL/hildur ucn dk;Covid-19_Stats\",",
+                "    dbo_FactCovid19Stat = Source{[Schema=\"dbo\",Item=\"FactCovid19Stat\"]}[Data]",
+                "in",
+                "    dbo_FactCovid19Stat"
+              ]
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "Previous Confirmed",
+            "expression": [
+              " ",
+              "CALCULATE(",
+              "    MAX(FactCovid19Stat[confirmed]),",
+              "    TOPN(1,",
+              "        FILTER(",
+              "        ALLSELECTED(FactCovid19Stat),",
+              "        FactCovid19Stat[date] < MAX(FactCovid19Stat[date])",
+              "        ),",
+              "        FactCovid19Stat[date],",
+              "        DESC",
+              "    )",
+              ")"
+            ]
+          }
+        ]
+      },
+      {
+        "name": "FactPopulation",
+        "columns": [
+          {
+            "name": "Alpha_2",
+            "dataType": "string",
+            "sourceColumn": "Alpha_2_code"
+          },
+          {
+            "name": "Population",
+            "dataType": "int64",
+            "sourceColumn": "Population"
+          },
+          {
+            "name": "Population_density",
+            "dataType": "double",
+            "sourceColumn": "Population_density"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "Partition",
+            "dataView": "full",
+            "source": {
+              "type": "m",
+              "expression": [
+                "let",
+                "    Source = #\"SQL/hildur ucn dk;Covid-19_Stats\",",
+                "    dbo_FactPopulation = Source{[Schema=\"dbo\",Item=\"FactPopulation\"]}[Data]",
+                "in",
+                "    dbo_FactPopulation"
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "name": "Covid-19_And_Population",
+        "description": "NaturalInnerjoin(FactCovid19Stat_FactPopulation",
+        "columns": [
+          {
+            "type": "calculatedTableColumn",
+            "name": "Alpha_2_code",
+            "dataType": "string",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[Alpha_2_code]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "date",
+            "dataType": "dateTime",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[date]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "confirmed",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[confirmed]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "deaths",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[deaths]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "recovered",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[recovered]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "Alpha_2",
+            "dataType": "string",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactPopulation[Alpha_2]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "Population",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactPopulation[Population]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "Population_density",
+            "dataType": "double",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactPopulation[Population_density]"
+          },
+          {
+            "type": "calculated",
+            "name": "ConPerCap",
+            "dataType": "double",
+            "isDataTypeInferred": true,
+            "expression": "[confirmed] / [Population] *1000"
+          },
+          {
+            "type": "calculated",
+            "name": "DthPerCap",
+            "dataType": "double",
+            "isDataTypeInferred": true,
+            "expression": "[deaths] / [Population] * 1000"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "ActiveCases",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[ActiveCases]"
+          },
+          {
+            "type": "calculatedTableColumn",
+            "name": "Net",
+            "dataType": "int64",
+            "isNameInferred": true,
+            "isDataTypeInferred": true,
+            "sourceColumn": "FactCovid19Stat[Net]"
+          }
+        ],
+        "partitions": [
+          {
+            "name": "CalculatedTable 1",
+            "source": {
+              "type": "calculated",
+              "expression": "NATURALINNERJOIN(FactCovid19Stat, FactPopulation)"
+            }
+          }
+        ],
+        "measures": [
+          {
+            "name": "MaxConfirmedPerCapita",
+            "expression": "MAX([ConPerCap])",
+            "kpi": {
+              "targetExpression": "500",
+              "statusGraphic": "Three Flags Colored",
+              "statusExpression": [
+                "var x='Covid-19_And_Population'[MaxConfirmedPerCapita] return",
+                "            if(ISBLANK(x),BLANK(),",
+                "                    If(x<100,1,",
+                "\t                If(x<1000,0,-1)",
+                "                )",
+                "            )",
+                "            "
+              ],
+              "annotations": [
+                {
+                  "name": "GoalType",
+                  "value": "StaticValue"
+                },
+                {
+                  "name": "KpiStatusType",
+                  "value": "LinearReversed"
+                },
+                {
+                  "name": "KpiThresholdType",
+                  "value": "Absolute"
+                },
+                {
+                  "name": "KpiThresholdOrdering",
+                  "value": "Ascending"
+                },
+                {
+                  "name": "KpiThresholdCount",
+                  "value": "2"
+                },
+                {
+                  "name": "KpiThreshold_0",
+                  "value": "100"
+                },
+                {
+                  "name": "KpiThreshold_1",
+                  "value": "1000"
+                }
+              ]
+            }
+          },
+          {
+            "name": "MaxDeadPerCapita",
+            "expression": "MAX([DthPerCap])",
+            "kpi": {
+              "targetExpression": "50",
+              "statusGraphic": "Traffic Light - Single",
+              "statusExpression": [
+                "var x='Covid-19_And_Population'[MaxDeadPerCapita] return",
+                "            if(ISBLANK(x),BLANK(),",
+                "                    If(x<10,1,",
+                "\t                If(x<80,0,-1)",
+                "                )",
+                "            )",
+                "            "
+              ],
+              "annotations": [
+                {
+                  "name": "GoalType",
+                  "value": "StaticValue"
+                },
+                {
+                  "name": "KpiStatusType",
+                  "value": "LinearReversed"
+                },
+                {
+                  "name": "KpiThresholdType",
+                  "value": "Absolute"
+                },
+                {
+                  "name": "KpiThresholdOrdering",
+                  "value": "Ascending"
+                },
+                {
+                  "name": "KpiThresholdCount",
+                  "value": "2"
+                },
+                {
+                  "name": "KpiThreshold_0",
+                  "value": "10"
+                },
+                {
+                  "name": "KpiThreshold_1",
+                  "value": "80"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "relationships": [
+      {
+        "name": "f45ec662-0082-4402-8a5e-3840fe2afc57",
+        "fromTable": "FactCovid19Stat",
+        "fromColumn": "date",
+        "toTable": "DimDate",
+        "toColumn": "date"
+      },
+      {
+        "name": "b563a54c-6a53-427d-b9c1-ed3b39c14fd6",
+        "fromTable": "FactCovid19Stat",
+        "fromColumn": "Alpha_2_code",
+        "toTable": "DimLocation",
+        "toColumn": "Alpha_2_code"
+      },
+      {
+        "name": "2299892d-e5f9-4a89-8ce1-9bb936cda546",
+        "fromTable": "FactPopulation",
+        "fromColumn": "Alpha_2",
+        "toTable": "DimLocation",
+        "toColumn": "Alpha_2_code"
+      }
+    ],
+    "perspectives": [
+      {
+        "name": "Perspective 1",
+        "tables": [
+          {
+            "name": "Covid-19_And_Population",
+            "measures": [
+              {
+                "name": "MaxConfirmedPerCapita"
+              },
+              {
+                "name": "MaxDeadPerCapita"
+              }
+            ]
+          },
+          {
+            "name": "DimDate",
+            "columns": [
+              {
+                "name": "date"
+              },
+              {
+                "name": "Day"
+              },
+              {
+                "name": "DayWithName"
+              },
+              {
+                "name": "Month"
+              },
+              {
+                "name": "MonthWithName"
+              },
+              {
+                "name": "Year"
+              }
+            ]
+          },
+          {
+            "name": "DimLocation",
+            "columns": [
+              {
+                "name": "Alpha_2_code"
+              },
+              {
+                "name": "Alpha_3_code"
+              },
+              {
+                "name": "IsCovidCountry"
+              },
+              {
+                "name": "Latitude_average"
+              },
+              {
+                "name": "Location"
+              },
+              {
+                "name": "Longitude_average"
+              },
+              {
+                "name": "Numeric_code"
+              },
+              {
+                "name": "ParentCode"
+              }
+            ]
+          },
+          {
+            "name": "FactCovid19Stat",
+            "columns": [
+              {
+                "name": "Alpha_2_code"
+              },
+              {
+                "name": "confirmed"
+              },
+              {
+                "name": "date"
+              },
+              {
+                "name": "deaths"
+              },
+              {
+                "name": "recovered"
+              }
+            ]
+          },
+          {
+            "name": "FactPopulation",
+            "columns": [
+              {
+                "name": "Alpha_2"
+              },
+              {
+                "name": "Population"
+              },
+              {
+                "name": "Population_density"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "annotations": [
+      {
+        "name": "ClientCompatibilityLevel",
+        "value": "600"
+      }
+    ]
+  },
+  "id": "SemanticModel"
+}
